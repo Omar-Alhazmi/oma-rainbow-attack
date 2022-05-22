@@ -3,7 +3,10 @@ const router = express.Router();
 const { fileUpload } = require('../helpers/helper');
 const fs = require('fs')
 var { Md5 } = require("../helpers/md5");
-
+var result = {}
+router.get('/', async (req, res) => {
+    res.render('index', { Result: result })
+})
 router.post('/api/upload', fileUpload.fields([{ name: 'hashFile', maxCount: 1 }, { name: 'passwordFile', maxCount: 1 }]), (req, res) => {
     const file = {
     };
@@ -18,30 +21,29 @@ router.post('/api/upload', fileUpload.fields([{ name: 'hashFile', maxCount: 1 },
     const savedFiles = file
     try {
         //read contents of the file containing the password hashes
-        const passwordHashes = fs.readFileSync(savedFiles.hashFile, 'UTF-8');
+        const passwordHashesFile = fs.readFileSync(savedFiles.hashFile, 'UTF-8');
         // split the contents by new line 
-        const hashes = passwordHashes.toString().split(/\r?\n/);
+        const hashes = passwordHashesFile.toString().split(/\r?\n/);
         // read the file containing the list of passwords passed in by user
         const passwordsFile = fs.readFileSync(savedFiles.passwordFile, 'UTF-8')
         const passwords = passwordsFile.toString().split(/\r?\n/);
-        let hashSample = []
-        hashSample.push(hashes)
-        let passwordSample = []
-        passwordSample.push(passwords)
-        let match = {}
-        passwordSample[0].forEach(elm => match[Md5(elm)] = elm)
+        let hashSampleArray = []
+        hashSampleArray.push(hashes)
+        let passwordSampleArray = []
+        passwordSampleArray.push(passwords)
+        let passHashesDictionary = {}
+        passwordSampleArray[0].forEach(element => passHashesDictionary[Md5(element)] = element)
         let notMatch = []
-        let result = {}
-        const keys = Object.keys(match);
-        hashSample[0].forEach(matches => {
+        const keys = Object.keys(passHashesDictionary);
+        hashSampleArray[0].forEach(matches => {
             if (keys.includes(matches)) {
-                result[match[matches]] = matches
+                result[passHashesDictionary[matches]] = matches
             } else {
                 notMatch.push(matches)
             }
         });
         result['Sorry there is no match for this hashes'] = notMatch
-        res.status(200).json(result);
+        return res.redirect('back')
     }
     catch (error) {
         res.status(404).json(error);

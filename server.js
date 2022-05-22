@@ -1,44 +1,34 @@
 const express = require('express')
-const  md5_pass_crack = require('./routes/md5_pass_crack');
 
 
-const bodyParser = require("body-parser");
-const cors = require("cors");
 const path = require('path');
 require("dotenv/config");
-const reactPort =  3000
-const expressPort = 5000
-
+const expressPort = 3000
 
 const app = express()
-app.use(bodyParser.json())
+app.set('view engine', 'ejs');
+app.set('views', path.join('views'));
+app.use(express.static('public'))
+app.use('/css', express.static(__dirname + 'public/css'))
+
+app.use(express.static('./views'));
+
 
 // this parses requests sent by `$.ajax`, which use a different content type
-app.use(bodyParser.urlencoded({ extended: true }))
+app.use(express.urlencoded({extended: true})); 
 
-
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || `http://localhost:${reactPort}`}))
-app.use('/uploads',express.static('uploads'))
+app.use('/uploads', express.static('uploads'))
 // define port for API to run on
 const port = process.env.PORT || expressPort
+const md5_pass_crack = require('./routes/md5_pass_crack')
 
-app.use((req, res, next) => {
-    console.log(`${new Date().toString()} => ${req.originalUrl}`, req.body);
-    next();
-  });
+app.use('/',md5_pass_crack);
+app.use('/api/upload',md5_pass_crack);
 
-  app.use(md5_pass_crack);
-  app.get('/*', function(req, res) {
-    res.sendFile(path.join(__dirname, 'index.html'), function(err) {
-      if (err) {
-        res.status(404).send("We think you are lost!");
-      }
-    })
-  })
-  
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
-}) 
+})
 
 module.exports = app
